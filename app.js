@@ -1,8 +1,8 @@
 const express = require("express");
 const PORT = 3001;
-const { requireLogin } = require("./middleware");
 const loginRoutes = require("./routes/loginRoutes");
 const registerRoutes = require("./routes/registerRoutes");
+const homeRoutes = require("./routes/homeRoutes");
 const path = require("path");
 const bodyParser = require("body-parser");
 const database = require("./database");
@@ -29,17 +29,9 @@ app.use(
   })
 );
 // routes
+app.use("/", homeRoutes);
 app.use("/login", loginRoutes);
 app.use("/register", registerRoutes);
-
-// home page
-app.get("/", requireLogin, (req, res, next) => {
-  var payload = {
-    pageTitle: "Home Page",
-    userLoggedIn: req.session.user,
-  };
-  res.status(200).render("home", payload);
-});
 
 // listen to server
 app.listen(PORT, () => console.log(`Running app on port ${PORT}`));

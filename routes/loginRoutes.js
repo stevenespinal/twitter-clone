@@ -1,9 +1,6 @@
 const express = require("express");
-const app = express();
 const router = express.Router();
-
-app.set("view engine", "pug");
-app.set("views", "views");
+const { signIn } = require("../controllers/auth");
 
 router.get("/", (req, res, next) => {
   const payload = {
@@ -11,5 +8,7 @@ router.get("/", (req, res, next) => {
   };
   res.status(200).render("login", payload);
 });
+
+router.post("/", signIn);
 
 module.exports = router;
