@@ -1,8 +1,10 @@
 const express = require("express");
 const PORT = 3001;
 const loginRoutes = require("./routes/loginRoutes");
+const logoutRoutes = require("./routes/logoutRoutes");
 const registerRoutes = require("./routes/registerRoutes");
 const homeRoutes = require("./routes/homeRoutes");
+const postsApi = require("./routes/api/posts");
 const path = require("path");
 const bodyParser = require("body-parser");
 const database = require("./database");
@@ -31,7 +33,9 @@ app.use(
 // routes
 app.use("/", homeRoutes);
 app.use("/login", loginRoutes);
+app.use("/logout", logoutRoutes);
 app.use("/register", registerRoutes);
+app.use("/api/posts", postsApi);
 
 // listen to server
 app.listen(PORT, () => console.log(`Running app on port ${PORT}`));
