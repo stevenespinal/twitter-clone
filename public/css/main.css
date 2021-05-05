@@ -103,6 +103,11 @@ nav a.active {
   padding-top: var(--spacing);
 }
 
+.modal .post {
+  padding: 0;
+  padding-bottom: var(--spacing);
+}
+
 .userImageContainer {
   width: 50px;
   height: 50px;
@@ -224,4 +229,18 @@ nav a.active {
   font-size: 13px;
   color: var(--greyText);
   margin-bottom: var(--spacing);
+}
+
+.replyFlag {
+  margin-bottom: 5px;
+  color: var(--greyText);
+}
+
+.replyFlag a {
+  color: var(--blue);
+}
+
+.post.largeFont .postBody,
+.post.largeFont .postFooter {
+  font-size: 23px;
 }

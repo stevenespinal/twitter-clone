@@ -17,24 +17,50 @@ $("#postTextarea, #replyTextarea").keyup((e) => {
   submitButton.prop("disabled", false);
 });
 
-$("#submitPostButton").click((e) => {
+$("#submitPostButton, #submitReplyButton").click((e) => {
   console.log("clicked");
   let button = $(e.target);
-  let textbox = $("#postTextarea");
+  let isModal = button.parents(".modal").length === 1;
+  let textbox = isModal ? $("#replyTextarea") : $("#postTextarea");
 
-  const data = {
+  let data = {
     content: textbox.val(),
   };
 
-  $.post(`/api/posts`, data, (postData) => {
-    console.log(postData);
-    let html = createPostHtml(postData);
+  if (isModal) {
+    let id = button.data().id;
+    data.replyTo = id;
+  }
 
-    $(".postContainer").prepend(html);
-    textbox.val("");
-    button.prop("disabled", true);
+  $.post(`/api/posts`, data, (postData) => {
+    if (data.replyTo) {
+      location.reload();
+    } else {
+      console.log(postData);
+      let html = createPostHtml(postData);
+
+      $(".postContainer").prepend(html);
+      textbox.val("");
+      button.prop("disabled", true);
+    }
   });
 });
+
+$("#replyModal").on("show.bs.modal", (e) => {
+  let button = $(e.relatedTarget);
+  let postId = getPostIdFromElement(button);
+
+  $("#submitReplyButton").data("id", postId);
+
+  $.get(`/api/posts/${postId}`, (results) => {
+    console.log(results);
+    outputPosts(results.postData, $("#originalPostContainer"));
+  });
+});
+
+$("#replyModal").on("hidden.bs.modal", () =>
+  $("#originalPostContainer").html("")
+);
 
 $(document).on("click", ".likeButton", (e) => {
   let button = $(e.target);
@@ -60,7 +86,7 @@ $(document).on("click", ".likeButton", (e) => {
 $(document).on("click", ".retweetButton", (e) => {
   let button = $(e.target);
   let postId = getPostIdFromElement(button);
-  console.log(postId);
+  // console.log(postId);
 
   if (postId === undefined) return;
   $.ajax({
@@ -79,6 +105,16 @@ $(document).on("click", ".retweetButton", (e) => {
   });
 });
 
+$(document).on("click", ".post", (e) => {
+  let elem = $(e.target);
+  let postId = getPostIdFromElement(elem);
+  // console.log(postId);
+
+  if (postId !== undefined && !elem.is("button")) {
+    window.location.href = `/post/${postId}`;
+  }
+});
+
 const getPostIdFromElement = (element) => {
   let isRoot = element.hasClass("post");
   let rootElement = isRoot ? element : element.closest(".post");
@@ -88,16 +124,14 @@ const getPostIdFromElement = (element) => {
   return postId;
 };
 
-const createPostHtml = (postData) => {
+const createPostHtml = (postData, largeFont = false) => {
   if (postData === null) return alert("Post object is null");
-
-  const { createdAt, retweetData } = postData;
 
   var postedBy = postData.postedBy;
 
-  const timestamp = timeDifference(new Date(), new Date(createdAt));
+  const timestamp = timeDifference(new Date(), new Date(postData.createdAt));
 
-  let isRetweet = retweetData !== undefined;
+  let isRetweet = postData.retweetData !== undefined;
   let retweetedBy = isRetweet ? postData.postedBy.username : null;
 
   postData = isRetweet ? postData.retweetData : postData;
@@ -116,13 +150,27 @@ const createPostHtml = (postData) => {
     ? "active"
     : "";
 
+  let largeFontClass = largeFont ? "largeFont" : "";
   let retweetText = "";
 
   if (isRetweet) {
     retweetText = `<span> <i class="fas fa-retweet"></i> Retweeted by <a href="/profile/${retweetedBy}">@${retweetedBy}</a></span>`;
   }
+
+  let replyFlag = "";
+
+  if (postData.replyTo && postData.replyTo._id) {
+    if (!postData.replyTo._id) return alert("ReplyTo has not been populated");
+    if (!postData.replyTo.postedBy._id)
+      return alert("PostedBy has not been populated");
+    let { username } = postData.replyTo.postedBy;
+    replyFlag = `<div class="replyFlag">
+      Replying to <a href='/profile/${username}'>@${username}</a>
+    </div>`;
+  }
+
   return `
-  <div class="post" data-id='${postData._id}'>
+  <div class="post ${largeFontClass}" data-id='${postData._id}'>
     <div class="postActionContainer">
     ${retweetText}
     </div>
@@ -138,6 +186,7 @@ const createPostHtml = (postData) => {
                 <span class="username">@${postedBy.username}</span>
                 <span class="date">${timestamp}</span>
             </div>  
+            ${replyFlag}
             <div class="postBody">
                 <span>${postData.content}</span>
             </div>  
@@ -191,3 +240,37 @@ function timeDifference(current, previous) {
     return Math.round(elapsed / msPerYear) + " years ago";
   }
 }
+
+const outputPosts = (results, container) => {
+  container.html("");
+
+  if (!Array.isArray(results)) {
+    results = [results];
+  }
+
+  results.forEach((result) => {
+    let html = createPostHtml(result);
+    container.append(html);
+  });
+
+  if (results.length === 0) {
+    container.append("<span class='noResults'>Nothing to show.</span>");
+  }
+};
+
+const outputPostsWithReplies = (results, container) => {
+  container.html("");
+
+  if (results.replyTo !== undefined && results.replyTo._id !== undefined) {
+    let html = createPostHtml(results.replyTo);
+    container.append(html);
+  }
+
+  let mainPostHtml = createPostHtml(results.postData, true);
+  container.append(mainPostHtml);
+
+  results.replies.forEach((result) => {
+    let html = createPostHtml(result);
+    container.append(html);
+  });
+};

@@ -4,12 +4,14 @@ const loginRoutes = require("./routes/loginRoutes");
 const logoutRoutes = require("./routes/logoutRoutes");
 const registerRoutes = require("./routes/registerRoutes");
 const homeRoutes = require("./routes/homeRoutes");
+const postRoutes = require("./routes/postRoutes");
 const postsApi = require("./routes/api/posts");
 const path = require("path");
 const bodyParser = require("body-parser");
 const database = require("./database");
 const app = express();
 const session = require("express-session");
+const { requireLogin } = require("./middleware");
 require("dotenv").config();
 
 // connect to mongodb
@@ -36,6 +38,7 @@ app.use("/login", loginRoutes);
 app.use("/logout", logoutRoutes);
 app.use("/register", registerRoutes);
 app.use("/api/posts", postsApi);
+app.use("/post", requireLogin, postRoutes);
 
 // listen to server
 app.listen(PORT, () => console.log(`Running app on port ${PORT}`));

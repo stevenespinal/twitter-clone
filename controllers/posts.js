@@ -1,6 +1,21 @@
 const Post = require("../models/Post");
 const User = require("../models/User");
 
+const getPostsAsync = async (filter) => {
+  let results = await Post.find(filter)
+    .populate("postedBy", "-password")
+    .populate("retweetData")
+    .populate("replyTo")
+    .sort({ createdAt: -1 })
+    .catch((error) => console.error(error));
+
+  results = await User.populate(results, {
+    path: "replyTo.postedBy",
+    select: "-password",
+  });
+  return await User.populate(results, { path: "retweetData.postedBy" });
+};
+
 const createPost = async (req, res, next) => {
   if (!req.body.content) {
     console.log("Content is invalid.");
@@ -11,6 +26,10 @@ const createPost = async (req, res, next) => {
     content: req.body.content,
     postedBy: req.session.user,
   };
+
+  if (req.body.replyTo) {
+    data.replyTo = req.body.replyTo;
+  }
 
   try {
     let newPost = await Post.create(data);
@@ -26,18 +45,26 @@ const createPost = async (req, res, next) => {
 };
 
 const getPosts = async (req, res, next) => {
-  try {
-    let results = await Post.find({})
-      .populate("postedBy", "-password")
-      .populate("retweetData")
-      .sort({ createdAt: -1 });
+  let results = await getPostsAsync({});
+  res.status(200).send(results);
+};
 
-    results = await User.populate(results, { path: "retweetData.postedBy" });
-    res.status(200).send(results);
-  } catch (error) {
-    console.error(error);
-    res.sendStatus(400);
+const getPost = async (req, res, next) => {
+  let postData = await getPostsAsync({ _id: req.params.id });
+  postData = postData[0];
+  // console.log(postData);
+
+  let results = {
+    postData,
+  };
+
+  if (postData.replyTo !== undefined) {
+    results.replyTo = postData.replyTo;
   }
+
+  results.replies = await getPostsAsync({ replyTo: req.params.id });
+
+  res.status(200).send(results);
 };
 
 const likePost = async (req, res, next) => {
@@ -134,4 +161,4 @@ const retweetPost = async (req, res, next) => {
   }
 };
 
-module.exports = { createPost, getPosts, likePost, retweetPost };
+module.exports = { createPost, getPost, getPosts, likePost, retweetPost };

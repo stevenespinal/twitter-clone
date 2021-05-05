@@ -1,0 +1,9 @@
+extends layouts/main-layout.pug
+
+block content 
+    script.
+        let postId = "!{postId}"
+    .postContainer
+    +createReplyModal(userLoggedIn)
+block scripts 
+    script(src="/js/post.js")
