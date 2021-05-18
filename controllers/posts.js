@@ -45,7 +45,31 @@ const createPost = async (req, res, next) => {
 };
 
 const getPosts = async (req, res, next) => {
-  let results = await getPostsAsync({});
+  let searchOptions = req.query;
+
+  if (searchOptions?.isReply) {
+    let isReply = searchOptions.isReply == "true";
+    searchOptions.replyTo = { $exists: isReply };
+    delete searchOptions.isReply;
+    // console.log(searchOptions);
+  }
+
+  if (searchOptions?.followingOnly) {
+    let followingOnly = searchOptions.followingOnly == "true";
+
+    if (followingOnly) {
+      let objectIds = [];
+      if (!req.session.user.following) {
+        req.session.user.following = [];
+      }
+      req.session.user.following.forEach((user) => objectIds.push(user));
+      objectIds.push(req.session.user._id);
+      searchOptions.postedBy = { $in: objectIds };
+    }
+    delete searchOptions.followingOnly;
+  }
+
+  let results = await getPostsAsync(searchOptions);
   res.status(200).send(results);
 };
 
@@ -161,4 +185,26 @@ const retweetPost = async (req, res, next) => {
   }
 };
 
-module.exports = { createPost, getPost, getPosts, likePost, retweetPost };
+const deletePost = async (req, res, next) => {
+  try {
+    await Post.findByIdAndDelete(req.params.id);
+    // await User.updateOne(
+    //   { retweets: req.params.id },
+    //   { $pullAll: { uid: [req.params.id] } }
+    // );
+
+    res.sendStatus(202);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(400);
+  }
+};
+
+module.exports = {
+  createPost,
+  getPost,
+  getPosts,
+  likePost,
+  retweetPost,
+  deletePost,
+};

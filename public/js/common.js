@@ -1,3 +1,5 @@
+var cropper;
+
 $("#postTextarea, #replyTextarea").keyup((e) => {
   let textbox = $(e.target);
   let value = textbox.val().trim();
@@ -62,6 +64,69 @@ $("#replyModal").on("hidden.bs.modal", () =>
   $("#originalPostContainer").html("")
 );
 
+$("#deletePostModal").on("show.bs.modal", (e) => {
+  let button = $(e.relatedTarget);
+  let postId = getPostIdFromElement(button);
+
+  $("#deletePostButton").data("id", postId);
+  console.log($("#deletePostButton").data());
+});
+
+$("#deletePostButton").click((e) => {
+  let id = $(e.target).data("id");
+  $.ajax({
+    url: `/api/posts/${id}`,
+    type: "DELETE",
+    success: () => {
+      location.href = "/";
+    },
+  });
+});
+
+$("#filePhoto").change(function () {
+  // let input = $(event.target);
+  // console.log(input);
+  if (this.files && this.files[0]) {
+    let reader = new FileReader();
+    reader.onload = (e) => {
+      console.log("loaded");
+      // console.log(input[0].files, input[0].files[0]);
+      let image = document.getElementById("imagePreview");
+      image.src = e.target.result;
+      // $("#imagePreview").attr("src", e.target.result);
+
+      if (cropper) {
+        cropper.destroy();
+      }
+      cropper = new Cropper(image, { aspectRatio: 1 / 1, background: false });
+    };
+
+    reader.readAsDataURL(this.files[0]);
+  }
+});
+
+$("#imageUploadButton").click(() => {
+  let canvas = cropper.getCroppedCanvas();
+  // console.log(canvas);
+  if (!canvas) {
+    alert("Could not upload image, make sure it is an image file");
+    return;
+  }
+  canvas.toBlob((blob) => {
+    let formData = new FormData();
+    formData.append("croppedImage", blob);
+
+    $.ajax({
+      url: `/api/users/profilePicture`,
+      type: "POST",
+      data: formData,
+      processData: false,
+      contentType: false,
+      success: () => location.reload(),
+    });
+  });
+});
+
 $(document).on("click", ".likeButton", (e) => {
   let button = $(e.target);
   let postId = getPostIdFromElement(button);
@@ -113,6 +178,37 @@ $(document).on("click", ".post", (e) => {
   if (postId !== undefined && !elem.is("button")) {
     window.location.href = `/post/${postId}`;
   }
+});
+
+$(document).on("click", ".followButton", (e) => {
+  let button = $(e.target);
+  let userId = button.data().user;
+  $.ajax({
+    url: `/api/users/${userId}/follow`,
+    type: "PUT",
+    success: (data, status, xhr) => {
+      if (xhr.status === 404) {
+        return;
+      }
+
+      let difference = 1;
+      if (data.following && data.following.includes(userId)) {
+        button.addClass("following");
+        button.text("Following");
+      } else {
+        button.removeClass("following");
+        button.text("Follow");
+        difference = -1;
+      }
+
+      let followersLabel = $("#followersValue");
+
+      if (followersLabel.length !== 0) {
+        let followersText = followersLabel.text();
+        followersLabel.text(parseInt(followersText) + difference);
+      }
+    },
+  });
 });
 
 const getPostIdFromElement = (element) => {
@@ -169,6 +265,12 @@ const createPostHtml = (postData, largeFont = false) => {
     </div>`;
   }
 
+  let buttons = "";
+
+  if (postData.postedBy._id === userLoggedIn._id && !isRetweet) {
+    buttons = `<button data-id="${postData._id}" data-toggle="modal" data-target="#deletePostModal"><i class="fas fa-times"></i></button>`;
+  }
+
   return `
   <div class="post ${largeFontClass}" data-id='${postData._id}'>
     <div class="postActionContainer">
@@ -185,6 +287,7 @@ const createPostHtml = (postData, largeFont = false) => {
   } ${postedBy.lastName}</a>
                 <span class="username">@${postedBy.username}</span>
                 <span class="date">${timestamp}</span>
+                ${buttons}
             </div>  
             ${replyFlag}
             <div class="postBody">

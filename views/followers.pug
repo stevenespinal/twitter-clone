@@ -1,0 +1,17 @@
+extends layouts/main-layout.pug
+
+block content 
+    if !profileUser
+        span.errorMessage The user #{username} was not found, please try again or ensure that this profile name is correct.
+    else
+        script. 
+            let profileUserId = "!{profileUser._id}"
+            let selectedTab = "!{selectedTab}"
+        
+        .tabsContainer 
+            +createTab('Following', `/profile/${profileUser.username}/following`, selectedTab !== "followers")
+            +createTab('Followers', `/profile/${profileUser.username}/followers`, selectedTab === "followers")
+        .resultsContainer
+        
+block scripts 
+    script(src="/js/followers.js")
