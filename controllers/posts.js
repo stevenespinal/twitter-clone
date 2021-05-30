@@ -200,6 +200,15 @@ const deletePost = async (req, res, next) => {
   }
 };
 
+const pinPost = async (req, res, next) => {
+  if (req.body.pinned !== undefined) {
+    await Post.updateMany({ postedBy: req.session.user }, { pinned: false });
+  }
+  Post.findByIdAndUpdate(req.params.id, req.body)
+    .then(() => res.sendStatus(204))
+    .catch(() => res.sendStatus(400));
+};
+
 module.exports = {
   createPost,
   getPost,
@@ -207,4 +216,5 @@ module.exports = {
   likePost,
   retweetPost,
   deletePost,
+  pinPost,
 };

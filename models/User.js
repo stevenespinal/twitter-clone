@@ -33,6 +33,10 @@ const UserSchema = new Schema(
       type: String,
       default: "/images/profilePic.png",
     },
+    coverPhoto: {
+      type: String,
+      // default: "/images/profilePic.png",
+    },
     likes: [
       {
         type: Schema.Types.ObjectId,

@@ -8,6 +8,7 @@ const postRoutes = require("./routes/postRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const userRoutes = require("./routes/userRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const searchRoutes = require("./routes/searchRoutes");
 const postsApi = require("./routes/api/posts");
 const path = require("path");
 const bodyParser = require("body-parser");
@@ -39,6 +40,7 @@ app.use(
 app.use("/", homeRoutes);
 app.use("/login", loginRoutes);
 app.use("/logout", logoutRoutes);
+app.use("/search", requireLogin, searchRoutes);
 app.use("/register", registerRoutes);
 app.use("/api/posts", postsApi);
 app.use("/api/users", userRoutes);

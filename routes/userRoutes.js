@@ -34,6 +34,33 @@ router.post(
     });
   }
 );
+router.post(
+  "/coverPhoto",
+  upload.single("croppedImage"),
+  async (req, res, next) => {
+    if (!req.file) {
+      console.log("No file was uploaded");
+      return res.sendStatus(400);
+    }
+    let filePath = `/uploads/images/${req.file.filename}.png`;
+    let tempPath = req.file.path;
+    let targetPath = path.join(__dirname, `../${filePath}`);
+    fs.rename(tempPath, targetPath, async (err) => {
+      if (err) {
+        console.error(err);
+        return res.sendStatus(400);
+      } else {
+        req.session.user = await User.findByIdAndUpdate(
+          req.session.user._id,
+          { coverPhoto: filePath },
+          { new: true }
+        );
+
+        res.sendStatus(204);
+      }
+    });
+  }
+);
 
 router.get("/:userId/followers", async (req, res, next) => {
   try {

@@ -83,6 +83,46 @@ $("#deletePostButton").click((e) => {
   });
 });
 
+$("#confirmPinPostModal").on("show.bs.modal", (e) => {
+  let button = $(e.relatedTarget);
+  let postId = getPostIdFromElement(button);
+
+  $("#pinPostButton").data("id", postId);
+  // console.log($("#deletePostButton").data());
+});
+
+$("#pinPostButton").click((e) => {
+  let id = $(e.target).data("id");
+  $.ajax({
+    url: `/api/posts/${id}`,
+    type: "PUT",
+    data: { pinned: true },
+    success: () => {
+      location.href = "/";
+    },
+  });
+});
+
+$("#unpinModal").on("show.bs.modal", (e) => {
+  let button = $(e.relatedTarget);
+  let postId = getPostIdFromElement(button);
+
+  $("#unpinPostButton").data("id", postId);
+  // console.log($("#deletePostButton").data());
+});
+
+$("#unpinPostButton").click((e) => {
+  let id = $(e.target).data("id");
+  $.ajax({
+    url: `/api/posts/${id}`,
+    type: "PUT",
+    data: { pinned: false },
+    success: () => {
+      location.href = "/";
+    },
+  });
+});
+
 $("#filePhoto").change(function () {
   // let input = $(event.target);
   // console.log(input);
@@ -105,6 +145,28 @@ $("#filePhoto").change(function () {
   }
 });
 
+$("#coverPhoto").change(function () {
+  // let input = $(event.target);
+  // console.log(input);
+  if (this.files && this.files[0]) {
+    let reader = new FileReader();
+    reader.onload = (e) => {
+      console.log("loaded");
+      // console.log(input[0].files, input[0].files[0]);
+      let image = document.getElementById("coverPhotoPreview");
+      image.src = e.target.result;
+      // $("#imagePreview").attr("src", e.target.result);
+
+      if (cropper) {
+        cropper.destroy();
+      }
+      cropper = new Cropper(image, { aspectRatio: 16 / 9, background: false });
+    };
+
+    reader.readAsDataURL(this.files[0]);
+  }
+});
+
 $("#imageUploadButton").click(() => {
   let canvas = cropper.getCroppedCanvas();
   // console.log(canvas);
@@ -118,6 +180,28 @@ $("#imageUploadButton").click(() => {
 
     $.ajax({
       url: `/api/users/profilePicture`,
+      type: "POST",
+      data: formData,
+      processData: false,
+      contentType: false,
+      success: () => location.reload(),
+    });
+  });
+});
+
+$("#coverPhotoUploadButton").click(() => {
+  let canvas = cropper.getCroppedCanvas();
+  // console.log(canvas);
+  if (!canvas) {
+    alert("Could not upload image, make sure it is an image file");
+    return;
+  }
+  canvas.toBlob((blob) => {
+    let formData = new FormData();
+    formData.append("croppedImage", blob);
+
+    $.ajax({
+      url: `/api/users/coverPhoto`,
       type: "POST",
       data: formData,
       processData: false,
@@ -266,9 +350,20 @@ const createPostHtml = (postData, largeFont = false) => {
   }
 
   let buttons = "";
+  let pinnedPostText = "";
 
-  if (postData.postedBy._id === userLoggedIn._id && !isRetweet) {
-    buttons = `<button data-id="${postData._id}" data-toggle="modal" data-target="#deletePostModal"><i class="fas fa-times"></i></button>`;
+  if (postData.postedBy._id === userLoggedIn._id) {
+    let pinnedClass = "";
+
+    let dataTarget = "#confirmPinPostModal";
+    if (postData.pinned) {
+      pinnedClass = "active";
+      dataTarget = "#unpinModal";
+      pinnedPostText = `<i class="fas fa-thumbtack"></i> <span>Pinned Post</span>`;
+    }
+    buttons = `
+    <button class='pinButton ${pinnedClass}' data-id="${postData._id}" data-toggle="modal" data-target="${dataTarget}"><i class="fas fa-thumbtack"></i></button>
+    <button data-id="${postData._id}" data-toggle="modal" data-target="#deletePostModal"><i class="fas fa-times"></i></button>`;
   }
 
   return `
@@ -281,6 +376,7 @@ const createPostHtml = (postData, largeFont = false) => {
             <img src=${postedBy.profilePic} alt="Profile pic">
         </div>  
         <div class="postContentContainer">
+            <div class='pinnedPostText'>${pinnedPostText}</div>
             <div class="header">
                 <a class="displayName" href="/profile/${postedBy.username}">${
     postedBy.firstName
