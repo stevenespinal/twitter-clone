@@ -54,6 +54,11 @@ const getPosts = async (req, res, next) => {
     // console.log(searchOptions);
   }
 
+  if (searchOptions?.search) {
+    searchOptions.content = { $regex: searchOptions.search, $options: "i" };
+    delete searchOptions.search;
+  }
+
   if (searchOptions?.followingOnly) {
     let followingOnly = searchOptions.followingOnly == "true";
 

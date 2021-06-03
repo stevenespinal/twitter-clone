@@ -18,6 +18,7 @@ const createPayload = (user) => {
     pageTitle: "Search",
     userLoggedIn: user,
     userLoggedInJs: JSON.stringify(user),
+    selectedTab: "posts",
   };
 };
 

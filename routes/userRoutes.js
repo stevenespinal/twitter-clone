@@ -62,6 +62,24 @@ router.post(
   }
 );
 
+router.get("/", async (req, res, next) => {
+  let searchOptions = req.query;
+  if (searchOptions?.search) {
+    searchOptions = {
+      $or: [
+        { firstName: { $regex: searchOptions.search, $options: "i" } },
+        { lastName: { $regex: searchOptions.search, $options: "i" } },
+        { username: { $regex: searchOptions.search, $options: "i" } },
+      ],
+    };
+  }
+
+  User.find(searchOptions)
+    .select("-password")
+    .then((result) => res.status(200).send(result))
+    .catch((error) => res.sendStatus(400));
+});
+
 router.get("/:userId/followers", async (req, res, next) => {
   try {
     let user = await User.findById(req.params.userId)
