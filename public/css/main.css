@@ -583,3 +583,30 @@ button span {
   border-radius: 3px;
   display: inline-block;
 }
+
+.resultListItem {
+  padding: 7px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--lightGrey);
+}
+
+.resultListItem:hover {
+  background-color: #f2f2f2;
+}
+
+.resultDetailsContainer {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.resultDetailsContainer .heading {
+  font-weight: 500;
+}
+
+.resultDetailsContainer .subText {
+  color: var(--greyText);
+  font-size: 14px;
+}
