@@ -115,3 +115,27 @@ mixin createUnpinnedPostModal()
                 .modal-footer
                     button.btn.btn-secondary(type='button', data-dismiss='modal') Cancel
                     button#unpinPostButton.btn.btn-danger(type='button') Delete Pin
+
+mixin createChatImage(chat, userLoggedIn)
+    if(!chat)
+        return
+    
+    - var i = 0
+
+    - var maxImagesToShow = 2
+
+    - var remainingUsers = chat.users.length - maxImagesToShow
+
+    - remainingUsers-- // remove our own image count 
+
+    .chatImagesContainer
+        if remainingUsers > 0
+            .userCount 
+                span +#{remainingUsers} 
+        each user in chat.users
+            if chat.users.length !== 1 && user._id === userLoggedIn._id
+                - continue
+            else if i >= maxImagesToShow
+                - break
+            img(src=user.profilePic, alt="User's profile picture", title=user.firstName)
+            - i++

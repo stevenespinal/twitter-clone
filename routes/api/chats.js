@@ -35,7 +35,9 @@ router.get("/", async (req, res, next) => {
     // find users in Chat schema, we're checking any element in the array that equals the current logged in users ID
     const results = await Chat.find({
       users: { $elemMatch: { $eq: req.session.user._id } },
-    }).populate("users", "-password");
+    })
+      .populate("users", "-password")
+      .sort({ updatedAt: -1 });
     res.status(200).send(results);
   } catch (error) {
     res.sendStatus(400);
