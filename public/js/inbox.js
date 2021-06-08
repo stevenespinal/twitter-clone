@@ -22,13 +22,14 @@ const outputChatList = (chatList, container) => {
 
 const createChatHtml = (chat) => {
   let chatName = getChatName(chat);
-  let image = "";
+  let image = getChatImageElements(chat);
   let latestMessage = "Testing";
 
   return `<a href="/messages/${chat._id}" class="resultListItem">
-    <div class="resultDetailsContainer">
-        <span class="heading">${chatName}</span>
-        <span class="subText">${latestMessage}</span>
+  ${image}
+    <div class="resultDetailsContainer ellipsis">
+        <span class="heading ellipsis">${chatName}</span>
+        <span class="subText ellipsis">${latestMessage}</span>
     </div>
   </a>`;
 };
@@ -50,4 +51,25 @@ const getOtherChatUsers = (users) => {
     return users;
   }
   return users.filter((user) => user._id !== userLoggedIn._id);
+};
+
+const getChatImageElements = (chat) => {
+  let otherChatUsers = getOtherChatUsers(chat.users);
+  let groupChatClass = "";
+
+  let chatImage = getUserChatImageElement(otherChatUsers[0]);
+  if (otherChatUsers.length > 1) {
+    groupChatClass = "groupChatImage";
+    chatImage += getUserChatImageElement(otherChatUsers[1]);
+  }
+  return `<div class="resultsImageContainer ${groupChatClass}">
+    ${chatImage}
+</div>`;
+};
+
+const getUserChatImageElement = (user) => {
+  if (!user || !user.profilePic) {
+    return alert("User is not valid");
+  }
+  return `<img src=${user.profilePic} alt="User's image">`;
 };

@@ -20,6 +20,7 @@ const signIn = async (req, res, next) => {
       let result = await bcrypt.compare(password, user.password);
 
       if (result) {
+        user.password = undefined;
         req.session.user = user;
         return res.redirect("/");
       }
