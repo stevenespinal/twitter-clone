@@ -122,7 +122,7 @@ mixin createChatImage(chat, userLoggedIn)
     
     - var i = 0
 
-    - var maxImagesToShow = 2
+    - var maxImagesToShow = 3
 
     - var remainingUsers = chat.users.length - maxImagesToShow
 
@@ -133,9 +133,23 @@ mixin createChatImage(chat, userLoggedIn)
             .userCount 
                 span +#{remainingUsers} 
         each user in chat.users
-            if chat.users.length !== 1 && user._id === userLoggedIn._id
+            if chat.users.length !== 1 && user._id == userLoggedIn._id
                 - continue
             else if i >= maxImagesToShow
                 - break
             img(src=user.profilePic, alt="User's profile picture", title=user.firstName)
             - i++
+
+mixin createChatNameModal(chat)
+    #chatNameModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='chatNameModalCenterTitle', aria-hidden='true')
+        .modal-dialog.modal-dialog-centered(role='document')
+            .modal-content
+                .modal-header
+                    h5#chatNameModalLongTitle.modal-title Create a chat name
+                    button.close(type='button', data-dismiss='modal', aria-label='Close')
+                    span(aria-hidden='true') &times;
+                .modal-body
+                    input#chatNameTextbox(type="text", placeholder="Enter a name for this chat", value=chat.chatName)
+                .modal-footer
+                    button.btn.btn-secondary(type='button', data-dismiss='modal') Cancel
+                    button#chatNameButton.btn.btn-danger(type='button') Save

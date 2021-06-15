@@ -4,6 +4,8 @@ $(document).ready(() => {
       alert("Could not retrieve chat list.");
     } else {
       outputChatList(data, $(".resultsContainer"));
+      $(".loadingSpinnerContainer").remove();
+      $(".resultsContainer").css("visibility", "visible");
     }
   });
 });
@@ -23,7 +25,7 @@ const outputChatList = (chatList, container) => {
 const createChatHtml = (chat) => {
   let chatName = getChatName(chat);
   let image = getChatImageElements(chat);
-  let latestMessage = "Testing";
+  let latestMessage = getLatestMessage(chat.latestMessage);
 
   return `<a href="/messages/${chat._id}" class="resultListItem">
   ${image}
@@ -34,24 +36,24 @@ const createChatHtml = (chat) => {
   </a>`;
 };
 
-const getChatName = (chat) => {
-  let chatName = chat.chatName;
-  if (!chatName) {
-    let otherChatUsers = getOtherChatUsers(chat.users);
-    let namesArray = otherChatUsers.map(
-      (user) => `${user.firstName} ${user.lastName}`
-    );
-    chatName = namesArray.join(", ");
-  }
-  return chatName;
-};
+// const getChatName = (chat) => {
+//   let chatName = chat.chatName;
+//   if (!chatName) {
+//     let otherChatUsers = getOtherChatUsers(chat.users);
+//     let namesArray = otherChatUsers.map(
+//       (user) => `${user.firstName} ${user.lastName}`
+//     );
+//     chatName = namesArray.join(", ");
+//   }
+//   return chatName;
+// };
 
-const getOtherChatUsers = (users) => {
-  if (users.length === 1) {
-    return users;
-  }
-  return users.filter((user) => user._id !== userLoggedIn._id);
-};
+// const getOtherChatUsers = (users) => {
+//   if (users.length === 1) {
+//     return users;
+//   }
+//   return users.filter((user) => user._id !== userLoggedIn._id);
+// };
 
 const getChatImageElements = (chat) => {
   let otherChatUsers = getOtherChatUsers(chat.users);
@@ -72,4 +74,12 @@ const getUserChatImageElement = (user) => {
     return alert("User is not valid");
   }
   return `<img src=${user.profilePic} alt="User's image">`;
+};
+
+const getLatestMessage = (latestMessage) => {
+  if (latestMessage != null) {
+    let sender = latestMessage.sender;
+    return `${sender.firstName} ${sender.lastName}: ${latestMessage.content}`;
+  }
+  return "New Chat";
 };

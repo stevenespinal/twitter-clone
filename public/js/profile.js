@@ -8,10 +8,20 @@ const loadPosts = () => {
     { postedBy: profileUserId, isReply: selectedTab === "replies" },
     (results) => {
       outputPosts(results, $(".postContainer"));
+      $(".loadingSpinnerContainer").remove();
+      $(".profileHeaderContainer").css("visibility", "visible");
+      $(".tabsContainer").css("visibility", "visible");
+      $(".pinnedPostContainer").css("visibility", "visible");
+      $(".postContainer").css("visibility", "visible");
     }
   );
   $.get(`/api/posts`, { postedBy: profileUserId, pinned: true }, (results) => {
     outputPinnedPost(results, $(".pinnedPostContainer"));
+    $(".loadingSpinnerContainer").remove();
+    $(".profileHeaderContainer").css("visibility", "visible");
+    $(".tabsContainer").css("visibility", "visible");
+    $(".pinnedPostContainer").css("visibility", "visible");
+    $(".postContainer").css("visibility", "visible");
   });
 };
 
