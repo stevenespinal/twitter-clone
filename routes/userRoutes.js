@@ -1,5 +1,6 @@
 const express = require("express");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
@@ -126,6 +127,15 @@ router.put("/:userId/follow", async (req, res, next) => {
     console.error(error);
     res.sendStatus(400);
   });
+
+  if (!isFollowing) {
+    await Notification.insertNotification(
+      userId,
+      req.session.user._id,
+      "follow",
+      req.session.user._id
+    );
+  }
 
   res.status(200).send(req.session.user);
 });

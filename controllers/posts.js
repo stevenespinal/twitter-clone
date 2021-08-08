@@ -1,5 +1,6 @@
 const Post = require("../models/Post");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 
 const getPostsAsync = async (filter) => {
   let results = await Post.find(filter)
@@ -37,6 +38,19 @@ const createPost = async (req, res, next) => {
       path: "postedBy",
       select: "-password",
     });
+    newPost = await Post.populate(newPost, {
+      path: "replyTo",
+      select: "-password",
+    });
+
+    if (newPost.replyTo !== undefined) {
+      await Notification.insertNotification(
+        newPost.replyTo.postedBy,
+        req.session.user._id,
+        "reply",
+        newPost._id
+      );
+    }
     res.status(201).send(newPost);
   } catch (error) {
     console.error(error);
@@ -129,6 +143,15 @@ const likePost = async (req, res, next) => {
       res.sendStatus(400);
     });
 
+    if (!isLiked) {
+      await Notification.insertNotification(
+        post.postedBy,
+        req.session.user._id,
+        "postLike",
+        post._id
+      );
+    }
+
     res.status(200).send(post);
   } catch (error) {
     console.error(error);
@@ -182,6 +205,15 @@ const retweetPost = async (req, res, next) => {
       console.error(error);
       res.sendStatus(400);
     });
+
+    if (!deletedPost) {
+      await Notification.insertNotification(
+        post.postedBy,
+        req.session.user._id,
+        "retweet",
+        post._id
+      );
+    }
 
     res.status(200).send(post);
   } catch (error) {
