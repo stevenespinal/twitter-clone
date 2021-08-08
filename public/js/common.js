@@ -615,3 +615,13 @@ const getOtherChatUsers = (users) => {
   }
   return users.filter((user) => user._id !== userLoggedIn._id);
 };
+
+const messageReceieved = (newMessage) => {
+  // they are not on the chat message page
+  if ($(".chatContainer").length === 0) {
+    // show pop up notification
+  } else {
+    // they are on the chat message page
+    addChatMessageHtml(newMessage);
+  }
+};

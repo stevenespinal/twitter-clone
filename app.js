@@ -55,4 +55,32 @@ app.use("/profile", requireLogin, profileRoutes);
 app.use("/uploads", uploadRoutes);
 
 // listen to server
-app.listen(PORT, () => console.log(`Running app on port ${PORT}`));
+const server = app.listen(PORT, () =>
+  console.log(`Running app on port ${PORT}`)
+);
+
+const io = require("socket.io")(server, { pingTimeout: 60000 });
+
+io.on("connection", (socket) => {
+  socket.on("setup", (userData) => {
+    // console.log(userData.firstName);
+    // join a chat room -> in this case it will have the name as the user id
+    socket.join(userData._id);
+    // broadcasting connected, emitting this event
+    socket.emit("connected");
+  });
+
+  socket.on("join room", (room) => socket.join(room));
+  // anyone in this specific chatId(room) will be emitted typing indication
+  socket.on("typing", (room) => socket.in(room).emit("typing"));
+  socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
+  socket.on("new message", (newMessage) => {
+    let chat = newMessage.chat;
+    if (!chat.users) return console.log("Chat.users not defined");
+    chat.users.forEach((user) => {
+      // don't broadcast your own message sent to your own account
+      if (user._id == newMessage.sender._id) return;
+      socket.in(user._id).emit("message received", newMessage);
+    });
+  });
+});

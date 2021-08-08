@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Message = require("../../models/Message");
 const Chat = require("../../models/Chat");
+const User = require("../../models/User");
 
 router.post("/", async (req, res, next) => {
   try {
@@ -18,6 +19,7 @@ router.post("/", async (req, res, next) => {
     let msg = await Message.create(newMessage);
     await msg.populate("sender").execPopulate();
     await msg.populate("chat").execPopulate();
+    await User.populate(msg, { path: "chat.users" });
     await Chat.findByIdAndUpdate(req.body.chatId, { latestMessage: msg });
     res.status(201).send(msg);
   } catch (error) {
