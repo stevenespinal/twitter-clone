@@ -13,6 +13,7 @@ const messagesRoutes = require("./routes/messagesRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const postsApi = require("./routes/api/posts");
 const chatsApi = require("./routes/api/chats");
+const notificationsApi = require("./routes/api/notifications");
 const messagesApi = require("./routes/api/messages");
 const path = require("path");
 const bodyParser = require("body-parser");
@@ -51,6 +52,7 @@ app.use("/api/posts", postsApi);
 app.use("/api/chats", chatsApi);
 app.use("/api/users", userRoutes);
 app.use("/api/messages", messagesApi);
+app.use("/api/notifications", notificationsApi);
 app.use("/notifications", requireLogin, notificationRoutes);
 app.use("/post", requireLogin, postRoutes);
 app.use("/profile", requireLogin, profileRoutes);
@@ -76,6 +78,9 @@ io.on("connection", (socket) => {
   // anyone in this specific chatId(room) will be emitted typing indication
   socket.on("typing", (room) => socket.in(room).emit("typing"));
   socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
+  socket.on("notification received", (room) =>
+    socket.in(room).emit("notification received")
+  );
   socket.on("new message", (newMessage) => {
     let chat = newMessage.chat;
     if (!chat.users) return console.log("Chat.users not defined");

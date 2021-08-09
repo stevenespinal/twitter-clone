@@ -2,6 +2,11 @@ var cropper;
 let timer;
 let selectedUsers = [];
 
+$(document).ready(() => {
+  refreshMessagesBadge();
+  refreshNotificationsBadge();
+});
+
 $("#postTextarea, #replyTextarea").keyup((e) => {
   let textbox = $(e.target);
   let value = textbox.val().trim();
@@ -38,6 +43,7 @@ $("#submitPostButton, #submitReplyButton").click((e) => {
 
   $.post(`/api/posts`, data, (postData) => {
     if (data.replyTo) {
+      emitNotification(postData.replyTo.postedBy);
       location.reload();
     } else {
       // console.log(postData);
@@ -262,6 +268,7 @@ $(document).on("click", ".likeButton", (e) => {
 
       if (postData.likes.includes(userLoggedIn._id)) {
         button.addClass("active");
+        emitNotification(postData.postedBy);
       } else {
         button.removeClass("active");
       }
@@ -284,6 +291,7 @@ $(document).on("click", ".retweetButton", (e) => {
 
       if (postData.retweetUsers.includes(userLoggedIn._id)) {
         button.addClass("active");
+        emitNotification(postData.postedBy);
       } else {
         button.removeClass("active");
       }
@@ -316,6 +324,7 @@ $(document).on("click", ".followButton", (e) => {
       if (data.following && data.following.includes(userId)) {
         button.addClass("following");
         button.text("Following");
+        emitNotification(userId);
       } else {
         button.removeClass("following");
         button.text("Follow");
@@ -330,6 +339,15 @@ $(document).on("click", ".followButton", (e) => {
       }
     },
   });
+});
+
+$(document).on("click", ".notification.active", (e) => {
+  let container = $(e.target);
+  let notificationId = container.data().id;
+  let href = container.attr("href");
+  e.preventDefault();
+  let callback = () => (window.location = href);
+  markNotificationsAsRead(notificationId, callback);
 });
 
 const getPostIdFromElement = (element) => {
@@ -624,4 +642,45 @@ const messageReceieved = (newMessage) => {
     // they are on the chat message page
     addChatMessageHtml(newMessage);
   }
+  refreshMessagesBadge();
+};
+
+const markNotificationsAsRead = (notificationId = null, callback = null) => {
+  if (callback === null) callback = () => location.reload();
+
+  let url =
+    notificationId != null
+      ? `/api/notifications/${notificationId}/markAsOpened`
+      : `/api/notifications/markAsOpened`;
+  $.ajax({
+    url,
+    type: "PUT",
+    success: callback,
+  });
+};
+
+const refreshMessagesBadge = () => {
+  $.get("/api/chats", { unreadOnly: true }, (data) => {
+    console.log(data);
+    let numResults = data.length;
+
+    if (numResults > 0) {
+      $("#messagesBadge").text(numResults).addClass("active");
+    } else {
+      $("#messagesBadge").text("").removeClass("active");
+    }
+  });
+};
+
+const refreshNotificationsBadge = () => {
+  $.get("/api/notifications", { unreadOnly: true }, (data) => {
+    console.log(data);
+    let numResults = data.length;
+
+    if (numResults > 0) {
+      $("#notificationBadge").text(numResults).addClass("active");
+    } else {
+      $("#notificationBadge").text("").removeClass("active");
+    }
+  });
 };
