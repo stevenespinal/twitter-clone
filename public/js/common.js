@@ -615,6 +615,52 @@ const updateSelectedUsersHtml = () => {
   $("#selectedUsers").prepend(elems);
 };
 
+const createChatHtml = (chat) => {
+  let chatName = getChatName(chat);
+  let image = getChatImageElements(chat);
+  let latestMessage = getLatestMessage(chat.latestMessage);
+  let activeClass =
+    !chat.latestMessage || chat.latestMessage.readBy.includes(userLoggedIn._id)
+      ? ""
+      : "active";
+  return `<a href="/messages/${chat._id}" class="resultListItem ${activeClass}">
+  ${image}
+    <div class="resultDetailsContainer ellipsis">
+        <span class="heading ellipsis">${chatName}</span>
+        <span class="subText ellipsis">${latestMessage}</span>
+    </div>
+  </a>`;
+};
+
+const getChatImageElements = (chat) => {
+  let otherChatUsers = getOtherChatUsers(chat.users);
+  let groupChatClass = "";
+
+  let chatImage = getUserChatImageElement(otherChatUsers[0]);
+  if (otherChatUsers.length > 1) {
+    groupChatClass = "groupChatImage";
+    chatImage += getUserChatImageElement(otherChatUsers[1]);
+  }
+  return `<div class="resultsImageContainer ${groupChatClass}">
+    ${chatImage}
+</div>`;
+};
+
+const getUserChatImageElement = (user) => {
+  if (!user || !user.profilePic) {
+    return alert("User is not valid");
+  }
+  return `<img src=${user.profilePic} alt="User's image">`;
+};
+
+const getLatestMessage = (latestMessage) => {
+  if (latestMessage != null) {
+    let sender = latestMessage.sender;
+    return `${sender.firstName} ${sender.lastName}: ${latestMessage.content}`;
+  }
+  return "New Chat";
+};
+
 const getChatName = (chat) => {
   let chatName = chat.chatName;
   if (!chatName) {
@@ -636,8 +682,9 @@ const getOtherChatUsers = (users) => {
 
 const messageReceieved = (newMessage) => {
   // they are not on the chat message page
-  if ($(".chatContainer").length === 0) {
+  if ($(`[data-room="${newMessage.chat._id}"]`).length === 0) {
     // show pop up notification
+    showMessagePopup(newMessage);
   } else {
     // they are on the chat message page
     addChatMessageHtml(newMessage);
@@ -683,4 +730,87 @@ const refreshNotificationsBadge = () => {
       $("#notificationBadge").text("").removeClass("active");
     }
   });
+};
+
+const showMessagePopup = (data) => {
+  if (!data.chat.latestMessage._id) {
+    data.chat.latestMessage = data;
+  }
+  let html = createChatHtml(data.chat);
+  let element = $(html);
+  element.hide().prependTo("#notificationList").slideDown("fast");
+  setTimeout(() => element.fadeOut(400), 5000);
+};
+
+const showNotificationPopup = (data) => {
+  let html = createNotificationHtml(data);
+  let element = $(html);
+  element.hide().prependTo("#notificationList").slideDown("fast");
+  setTimeout(() => element.fadeOut(400), 5000);
+};
+
+const outputNotificationList = (notifications, container) => {
+  notifications.forEach((notification) => {
+    let html = createNotificationHtml(notification);
+    container.append(html);
+  });
+
+  if (notifications.length == 0) {
+    container.append(`<span class='noResults'>Nothing to show</span>`);
+  }
+};
+
+const createNotificationHtml = (notification) => {
+  let userFrom = notification.userFrom;
+  let className = notification.opened ? "" : "active";
+  return `<a href=${getNotificationUrl(
+    notification
+  )} class="resultListItem notification ${className}" data-id=${
+    notification._id
+  }>
+    <div class="resultsImageContainer">
+        <img src='${userFrom.profilePic}'>
+    </div>
+    <div class='resultsDetailsContainer ellipsis'>
+        <span class="ellipsis">${getNotificationText(notification)}</span>
+    </div>
+  </a>`;
+};
+
+const getNotificationText = (notification) => {
+  let userFrom = notification.userFrom;
+
+  if (!userFrom.firstName || !userFrom.lastName) {
+    return alert("User from data is not populated");
+  }
+
+  let userFromName = `${userFrom.firstName} ${userFrom.lastName}`;
+  let text;
+  if (notification.notificationType == "retweet") {
+    text = `${userFromName} retweeted one of your posts`;
+  } else if (notification.notificationType == "postLike") {
+    text = `${userFromName} liked one of your posts`;
+  } else if (notification.notificationType == "reply") {
+    text = `${userFromName} replied one of your posts`;
+  } else if (notification.notificationType == "follow") {
+    text = `${userFromName} followed you`;
+  }
+
+  return `<span class="ellipsis">${text}</span>`;
+};
+
+const getNotificationUrl = (notification) => {
+  let url;
+
+  if (
+    notification.notificationType == "retweet" ||
+    notification.notificationType == "postLike" ||
+    notification.notificationType == "reply"
+  ) {
+    url = `/post/${notification.entityId}`;
+  } else if (notification.notificationType == "follow") {
+    url = `/profile/${notification.entityId}`;
+  }
+
+  return url;
 };

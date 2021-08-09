@@ -6,9 +6,10 @@ socket.emit("setup", userLoggedIn);
 
 socket.on("connected", () => (connected = true));
 socket.on("message received", (newMessage) => messageReceieved(newMessage));
-socket.on("notification received", (newNotification) =>
+socket.on("notification received", () =>
   //   console.log(newNo÷tification)
   $.get("/api/notifications/latest", (notificationData) => {
+    showNotificationPopup(notificationData);
     refreshNotificationsBadge();
   })
 );
